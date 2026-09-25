@@ -1,4 +1,4 @@
-# Mystery Box App
+# MEMECEPTION App
 
 A lightweight, real-time event voting application built with **FastAPI + SQLite + Vanilla JS + Tailwind CSS**.
 

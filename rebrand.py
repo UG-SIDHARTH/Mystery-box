@@ -5,7 +5,7 @@ def replace_in_file(path):
         content = f.read()
 
     # Replace text
-    content = content.replace("Event Voting", "Mystery Box")
+    content = content.replace("Event Voting", "MEMECEPTION")
     
     # Replace the V and H logos with the Lucide package icon
     content = content.replace(">\n          V</div>", "><i data-lucide=\"package\" class=\"w-5 h-5\"></i></div>")

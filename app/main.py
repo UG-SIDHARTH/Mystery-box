@@ -54,12 +54,12 @@ async def lifespan(app: FastAPI):
         await get_or_create_event(db)
         await get_or_create_active_token(db)
 
-    logger.info("✅  Mystery Box App started. Visit http://localhost:8000")
+    logger.info("✅  MEMECEPTION App started. Visit http://localhost:8000")
     yield
     await engine.dispose()
 
 
-app = FastAPI(title="Mystery Box", lifespan=lifespan)
+app = FastAPI(title="MEMECEPTION", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
