@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-HOST_PASSWORD = os.getenv("HOST_PASSWORD")
+HOST_PASSWORD = "admin"
 
 limiter = Limiter(key_func=get_remote_address)
 
