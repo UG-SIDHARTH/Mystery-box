@@ -528,15 +528,14 @@
         '<i data-lucide="medal" class="w-8 h-8 inline text-orange-400"></i>'
       ];
 
-      const top3 = leaderboard.slice(0, 3);
-      list.innerHTML = top3.map((item, i) => `
+      list.innerHTML = leaderboard.map((item, i) => `
     <div class="flex items-center gap-4 px-5 py-4 hover:bg-white/5/30 transition animate-slide-up"
          style="animation-delay:${i * 60}ms">
       <span class="text-2xl w-10 text-center">${medals[item.rank - 1] || `#${item.rank}`}</span>
       <img src="/uploads/${item.filename}" class="w-16 h-16 object-cover rounded-lg border border-white/20 bg-zinc-950/50" />
       <div class="flex-1 min-w-0">
-        <p class="font-bold truncate">${item.rank <= 3 ? item.name : `Participant #${item.participant}`}</p>
-        ${item.rank <= 3 ? `<p class="text-sm text-indigo-300 truncate mb-1">${item.topic}</p>` : ''}
+        <p class="font-bold truncate">${item.name || `Participant #${item.participant}`}</p>
+        <p class="text-sm text-indigo-300 truncate mb-1">${item.topic || ''}</p>
         <p class="text-yellow-400 text-lg">${'★'.repeat(Math.round(item.avg_score))}${'☆'.repeat(5 - Math.round(item.avg_score))}</p>
         <p class="text-zinc-400 text-xs">${item.avg_score.toFixed(2)} avg · ${item.vote_count} votes</p>
       </div>
