@@ -7,7 +7,9 @@ services:
       - "80:80"
     volumes:
       - ./app/uploads:/app/app/uploads
-      - ./event_voting.db:/app/event_voting.db
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/event_voting.db
     env_file:
       - .env
     restart: unless-stopped
