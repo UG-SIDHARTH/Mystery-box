@@ -90,6 +90,8 @@ async def list_participants(db: AsyncSession = Depends(get_db)):
         rows.append({
             "id":             p.id,
             "display_number": p.display_number,
+            "name":           p.name,
+            "topic":          p.topic,
             "joined_at":      p.joined_at.isoformat(),
             "uploaded":       own_upload,
             "upload_filename": p.upload.filename if p.upload else None,

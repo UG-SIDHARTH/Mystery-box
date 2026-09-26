@@ -107,7 +107,8 @@ async def get_stats(db: AsyncSession) -> dict[str, Any]:
 
 async def get_leaderboard(db: AsyncSession) -> list[dict]:
     """Return sorted leaderboard of uploads with avg score and vote count."""
-    uploads_res = await db.execute(select(Upload))
+    from sqlalchemy.orm import selectinload
+    uploads_res = await db.execute(select(Upload).options(selectinload(Upload.participant)))
     uploads     = uploads_res.scalars().all()
 
     rows = []
@@ -121,7 +122,9 @@ async def get_leaderboard(db: AsyncSession) -> list[dict]:
         rows.append({
             "upload_id":    upload.id,
             "filename":     upload.filename,
-            "participant":  upload.participant_id,
+            "participant":  upload.participant.display_number if upload.participant else upload.participant_id,
+            "name":         upload.participant.name if upload.participant else "Unknown",
+            "topic":        upload.participant.topic if upload.participant else "Unknown",
             "avg_score":    round(avg, 2),
             "vote_count":   len(votes),
         })

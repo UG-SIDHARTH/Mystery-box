@@ -89,6 +89,56 @@
   <main class="flex-1 flex flex-col px-4 py-6 md:py-10">
     <div class="w-full max-w-xl m-auto">
 
+      <!-- JOIN (New) -->
+      <div id="view-join" class="hidden animate-fade-in">
+        <div class="text-center mb-8">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-4xl">
+            <i data-lucide="user" class="w-8 h-8"></i>
+          </div>
+          <h1 class="text-3xl font-['Outfit'] font-bold tracking-tight text-2xl">Join the Event</h1>
+          <p class="text-zinc-400 mt-2">Enter your name and pick a topic to get started.</p>
+        </div>
+
+        <form id="join-form" class="space-y-4" onsubmit="event.preventDefault(); submitJoinForm();">
+          <div>
+            <label class="block text-sm font-medium text-zinc-300 mb-1">Your Name</label>
+            <input type="text" id="join-name" required placeholder="John Doe"
+              class="w-full bg-zinc-900/60 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-zinc-300 mb-1">Choose a Topic</label>
+            <select id="join-topic" required
+              class="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors">
+              <option value="" disabled selected>Select a topic...</option>
+              <option value="AI vs Human jobs">1) AI vs Human jobs</option>
+              <option value="Is AI the tool or are we slowly becoming a tool for AI?">2) Is AI the tool or are we slowly becoming a tool for AI?</option>
+              <option value="One more Reel (Digital addiction and lost in time)">3) One more Reel (Digital addiction and lost in time)</option>
+              <option value="The Internship/Skill/Certificate Race">4) The Internship/Skill/Certificate Race</option>
+              <option value="Entry-Level Job — 3 Years Experience Required">5) Entry-Level Job — 3 Years Experience Required</option>
+              <option value="AI Coding vs Learning to Code">6) AI Coding vs Learning to Code</option>
+              <option value="Deepfakes & Can I Believe What I See?">7) Deepfakes & "Can I Believe What I See?"</option>
+              <option value="Privacy? What Privacy?">8) Privacy? What Privacy?</option>
+              <option value="Cashless Everything">9) Cashless Everything</option>
+              <option value="Short-Form Content & Attention Span">10) Short-Form Content & Attention Span</option>
+              <option value="Food delivery fees on online platform">11) Food delivery fees on online platform</option>
+              <option value="The Group project problem">12) The Group project problem</option>
+              <option value="Targeted Advertising">13) Targeted Advertising</option>
+              <option value="Procrastination">14) Procrastination</option>
+              <option value="Vibe Coding">15) Vibe Coding</option>
+              <option value="Social Media vs Reality">16) Social Media vs Reality</option>
+              <option value="The Student 'Everything' Problem">17) The Student "Everything" Problem</option>
+              <option value="Information Overload">18) Information Overload</option>
+              <option value="Internet Dependency">19) Internet Dependency</option>
+              <option value="10-Minute Delivery">20) 10-Minute Delivery</option>
+            </select>
+          </div>
+          <button type="submit" id="join-btn"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all text-white font-semibold py-3 rounded-xl mt-4">
+            Join Event
+          </button>
+        </form>
+      </div>
+
       <!-- WAITING -->
       <div id="view-waiting" class="hidden animate-fade-in text-center">
         <div
@@ -112,7 +162,7 @@
             class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-4xl">
             <i data-lucide="camera" class="w-6 h-6"></i></div>
           <h1 class="text-3xl font-['Outfit'] font-bold tracking-tight text-2xl">Upload Your Poster</h1>
-          <p class="text-zinc-400 mt-2">One image only · PNG, JPG, WEBP · Max 20 MB</p>
+          <p class="text-zinc-400 mt-2" id="upload-topic-label">One image only · PNG, JPG, WEBP · Max 20 MB</p>
         </div>
 
         <div id="upload-area">
@@ -186,6 +236,7 @@
             class="w-full object-contain max-h-80 bg-zinc-950/50 cursor-pointer hover:opacity-90 transition-opacity"
             title="Click to view full screen" / src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=">
           <div class="p-6">
+            <h2 id="vote-topic" class="text-xl font-semibold text-white mb-2 text-center"></h2>
             <p class="text-zinc-400 text-sm mb-4 text-center">How would you rate this poster?</p>
             <div id="star-row" class="mb-4">
               <div class="flex justify-center gap-2 text-5xl cursor-pointer select-none mb-2" id="star-container"
@@ -260,6 +311,8 @@
     const state = {
       participantId: null,
       displayNumber: null,
+      name: null,
+      topic: null,
       phase: null,
       hasUpload: false,
       images: [],   // [{upload_id, filename, url, voted}]
@@ -289,7 +342,44 @@
     // AUTH
     async function handleJoin(token) {
       try {
-        const res = await fetch(`/join/${token}`, { method: 'POST' });
+        const res = await fetch('/me');
+        if (res.ok) {
+          const data = await res.json();
+          state.participantId = data.participant_id;
+          state.displayNumber = data.display_number;
+          state.name = data.name;
+          state.topic = data.topic;
+          state.phase = data.phase;
+          state.hasUpload = data.has_upload;
+          if (data.leaderboard) {
+            state.lastLeaderboard = data.leaderboard;
+          }
+          updateBadge();
+          history.replaceState({}, '', '/');
+          await renderPhase();
+          return;
+        }
+      } catch (e) {
+        // Not joined, continue to show form
+      }
+      showView('join');
+    }
+
+    async function submitJoinForm() {
+      const name = document.getElementById('join-name').value.trim();
+      const topic = document.getElementById('join-topic').value;
+      if (!name || !topic) return;
+
+      const btn = document.getElementById('join-btn');
+      btn.disabled = true;
+      btn.textContent = 'Joining...';
+
+      try {
+        const res = await fetch(`/join/${state.token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, topic })
+        });
         const data = await res.json();
         if (!res.ok) {
           showView('error');
@@ -299,8 +389,9 @@
         state.participantId = data.participant_id;
         state.displayNumber = data.display_number;
         state.phase = data.phase;
+        state.name = name;
+        state.topic = topic;
         updateBadge();
-        // Replace URL to /
         history.replaceState({}, '', '/');
         await renderPhase();
       } catch (e) {
@@ -319,6 +410,8 @@
         const data = await res.json();
         state.participantId = data.participant_id;
         state.displayNumber = data.display_number;
+        state.name = data.name;
+        state.topic = data.topic;
         state.phase = data.phase;
         state.hasUpload = data.has_upload;
         if (data.leaderboard) {
@@ -338,6 +431,9 @@
       if (phase === 'WAITING') {
         showView('waiting');
       } else if (phase === 'UPLOAD') {
+        if (state.topic) {
+           document.getElementById('upload-topic-label').textContent = `Topic: ${state.topic} · PNG, JPG, WEBP · Max 20 MB`;
+        }
         if (state.hasUpload) {
           showView('upload-done');
         } else {
@@ -503,6 +599,7 @@
       const total = state.totalToVote;
 
       const vImg = document.getElementById('vote-image'); vImg.src = img.url; vImg.style.display = 'block';
+      document.getElementById('vote-topic').textContent = img.topic || 'No topic';
       document.getElementById('vote-counter').textContent = `${voted + 1} / ${total}`;
       document.getElementById('vote-progress-bar').style.transform = `scaleX(${voted / total})`;
 
@@ -610,7 +707,8 @@
         const suffix = suffixes[myResult.rank - 1] || 'th';
         
         document.getElementById('winner-modal-rank').textContent = myResult.rank + suffix;
-        document.getElementById('winner-modal-participant').textContent = state.displayNumber;
+        document.getElementById('winner-modal-participant').textContent = state.name || `Participant #${state.displayNumber}`;
+        document.getElementById('winner-modal-topic').textContent = myResult.topic || '';
         document.getElementById('winner-modal').classList.remove('hidden');
       }
     }
@@ -647,7 +745,8 @@
       <div class="text-4xl w-14 text-center flex-shrink-0">${medal}</div>
       <img src="/uploads/${item.filename}" onclick="openFullscreenResultImage('/uploads/${item.filename}')" class="cursor-pointer hover:opacity-80 transition-opacity w-20 h-20 object-cover rounded-xl border border-white/10 bg-zinc-950/50" />
       <div class="flex-1 min-w-0">
-        <p class="font-bold text-lg truncate">Participant #${item.participant}</p>
+        <p class="font-bold text-lg truncate">${item.rank <= 3 ? item.name : `Participant #${item.participant}`}</p>
+        ${item.rank <= 3 ? `<p class="text-sm text-indigo-300 truncate mb-1">${item.topic}</p>` : ''}
         <p class="text-yellow-400 text-xl tracking-wider">${stars}</p>
         <p class="text-zinc-400 text-sm mt-0.5">${item.avg_score.toFixed(2)} avg · ${item.vote_count} vote${item.vote_count !== 1 ? 's' : ''}</p>
       </div>
@@ -712,7 +811,7 @@
     }
 
     // HELPERS
-    const VIEWS = ['waiting', 'upload', 'upload-done', 'voting', 'voting-done', 'results', 'not-registered', 'error'];
+    const VIEWS = ['join', 'waiting', 'upload', 'upload-done', 'voting', 'voting-done', 'results', 'not-registered', 'error'];
 
     function showView(name) {
       VIEWS.forEach(v => {
@@ -726,7 +825,7 @@
     function updateBadge() {
       const badge = document.getElementById('participant-badge');
       if (state.displayNumber) {
-        badge.textContent = `Participant #${state.displayNumber}`;
+        badge.textContent = `${state.name || 'Participant'} #${state.displayNumber}`;
         badge.classList.remove('hidden');
       }
     }
@@ -770,7 +869,8 @@
       <p class="text-zinc-300 mb-6 text-lg">You placed <span id="winner-modal-rank" class="font-bold text-yellow-400 text-2xl"></span>!</p>
       <div class="bg-black/40 rounded-xl p-4 mb-6 border border-white/10">
         <p class="text-sm text-zinc-400 mb-1">Please stand up and show everyone</p>
-        <p class="font-bold text-xl text-white">Participant #<span id="winner-modal-participant"></span></p>
+        <p class="font-bold text-xl text-white"><span id="winner-modal-participant"></span></p>
+        <p class="text-md text-indigo-300 mt-1"><span id="winner-modal-topic"></span></p>
       </div>
       <button onclick="document.getElementById('winner-modal').classList.add('hidden')"
         class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 active:scale-95 transition-all">

@@ -105,8 +105,13 @@ async def get_images_to_vote(
     if event.phase not in (Phase.VOTING, Phase.RESULTS):
         raise HTTPException(status_code=400, detail="Voting has not started yet.")
 
+    from sqlalchemy.orm import selectinload
     # All uploads except participant's own
-    result = await db.execute(select(Upload).where(Upload.participant_id != participant.id))
+    result = await db.execute(
+        select(Upload)
+        .options(selectinload(Upload.participant))
+        .where(Upload.participant_id != participant.id)
+    )
     uploads = result.scalars().all()
 
     rng = random.Random(participant.id)
@@ -130,6 +135,7 @@ async def get_images_to_vote(
             "upload_id": u.id,
             "filename":  u.filename,
             "url":       f"/uploads/{u.filename}",
+            "topic":     u.participant.topic if u.participant else "",
             "voted":     u.id in voted_ids,
         }
         for u in uploads

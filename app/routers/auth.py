@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +26,9 @@ router = APIRouter()
 
 SESSION_COOKIE = "session_id"
 
+class JoinRequest(BaseModel):
+    name: str
+    topic: str
 
 
 async def get_current_participant(
@@ -50,6 +54,7 @@ async def get_current_participant(
 @router.post("/join/{token}")
 async def join_event(
     token: str,
+    join_data: JoinRequest,
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
@@ -88,6 +93,8 @@ async def join_event(
         session_id     = new_session,
         display_number = max_num + 1,
         is_connected   = False,
+        name           = join_data.name,
+        topic          = join_data.topic,
     )
     db.add(participant)
     await db.flush()
@@ -146,6 +153,8 @@ async def get_me(
     resp = {
         "participant_id": participant.id,
         "display_number": participant.display_number,
+        "name":           participant.name,
+        "topic":          participant.topic,
         "phase":          event.phase.value,
         "has_upload":     participant.upload is not None,
     }

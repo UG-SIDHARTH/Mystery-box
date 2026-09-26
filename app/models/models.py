@@ -47,6 +47,8 @@ class Participant(Base):
     display_number: Mapped[int]      = mapped_column(Integer, nullable=False)
     joined_at:      Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     is_connected:   Mapped[bool]     = mapped_column(Boolean, default=False, nullable=False)
+    name:           Mapped[str]      = mapped_column(String(128), nullable=False, default="")
+    topic:          Mapped[str]      = mapped_column(String(256), nullable=False, default="")
 
     token:   Mapped[Optional["InviteToken"]] = relationship("InviteToken", back_populates="participant")
     upload:  Mapped[Optional["Upload"]]      = relationship("Upload", back_populates="participant", uselist=False)
