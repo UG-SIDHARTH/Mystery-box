@@ -451,6 +451,10 @@
     }
 
     function formatTime(iso) {
+      if (!iso) return '-';
+      if (!iso.endsWith('Z') && !iso.includes('+') && !iso.includes('-')) {
+        iso += 'Z';
+      }
       const d = new Date(iso);
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
