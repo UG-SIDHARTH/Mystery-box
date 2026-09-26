@@ -105,10 +105,21 @@
             <div class="flex items-center justify-center gap-2 mt-1">
               <a id="qr-link" href="#" target="_blank"
                 class="text-xs text-indigo-400 hover:underline break-all"></a>
+              <a id="btn-open-qr" href="#" target="_blank" title="Open Link" class="text-zinc-400 hover:text-white transition active:scale-95">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
               <button id="btn-copy-qr" onclick="copyQRLink()" title="Copy Link" class="text-zinc-400 hover:text-white transition active:scale-95">
                 <i data-lucide="copy" class="w-4 h-4"></i>
               </button>
             </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-white/10">
+            <p class="text-sm font-semibold mb-2 text-zinc-300 text-center">Invite Mode</p>
+            <div class="flex gap-2">
+              <button id="btn-mode-open" onclick="setInviteMode('OPEN')" class="flex-1 py-2 text-xs font-semibold rounded-lg border border-indigo-500/50 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 transition">OPEN</button>
+              <button id="btn-mode-invite" onclick="setInviteMode('INVITE_ONLY')" class="flex-1 py-2 text-xs font-semibold rounded-lg border border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 transition">INVITE ONLY</button>
+            </div>
+            <p class="text-[10px] text-zinc-500 mt-2 text-center" id="mode-help-text">Anyone with the link can join.</p>
           </div>
         </div>
 
@@ -241,7 +252,7 @@
             <table class="w-full text-sm">
               <thead>
                 <tr class="border-b border-white/10 text-zinc-400 text-xs uppercase tracking-wider">
-                  <th class="px-5 py-3 text-left">Participant</th>
+                  <th class="px-5 py-3 text-left">Participant Name</th>
                   <th class="px-3 py-3 text-center">Joined</th>
                   <th class="px-3 py-3 text-center">Uploaded</th>
                   <th class="px-3 py-3 text-center">Voted</th>
@@ -338,6 +349,8 @@
       const link = document.getElementById('qr-link');
       link.href = data.join_url;
       link.textContent = data.join_url;
+      const openBtn = document.getElementById('btn-open-qr');
+      if (openBtn) openBtn.href = data.join_url;
     }
 
     // STATS
@@ -360,6 +373,33 @@
       const pct = Math.round((stats.total_uploads / total) * 100);
       document.getElementById('upload-progress-bar').style.width = pct + '%';
       document.getElementById('upload-progress-label').textContent = `${stats.total_uploads} / ${stats.total_participants}`;
+
+      if (stats.invite_mode) {
+        updateInviteModeUI(stats.invite_mode);
+      }
+    }
+
+    function updateInviteModeUI(mode) {
+      const btnOpen = document.getElementById('btn-mode-open');
+      const btnInvite = document.getElementById('btn-mode-invite');
+      const helpText = document.getElementById('mode-help-text');
+      
+      const activeClass = ['border-indigo-500/50', 'bg-indigo-500/20', 'text-indigo-300'];
+      const inactiveClass = ['border-white/10', 'bg-white/5', 'text-zinc-400'];
+
+      if (mode === 'OPEN') {
+        btnOpen.classList.remove(...inactiveClass);
+        btnOpen.classList.add(...activeClass);
+        btnInvite.classList.remove(...activeClass);
+        btnInvite.classList.add(...inactiveClass);
+        helpText.textContent = 'Anyone with the link can join.';
+      } else {
+        btnInvite.classList.remove(...inactiveClass);
+        btnInvite.classList.add(...activeClass);
+        btnOpen.classList.remove(...activeClass);
+        btnOpen.classList.add(...inactiveClass);
+        helpText.textContent = 'Link is single-use. Auto-rotates on join.';
+      }
     }
 
     // PARTICIPANTS TABLE
@@ -425,6 +465,16 @@
           body: JSON.stringify({ phase }),
         });
       } catch { alert('Failed to change phase.'); }
+    }
+
+    async function setInviteMode(mode) {
+      try {
+        await fetch('/host/invite_mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invite_mode: mode }),
+        });
+      } catch { alert('Failed to change invite mode.'); }
     }
 
     async function revealResults() {
@@ -537,6 +587,10 @@
 
           case 'phase_changed':
             updatePhaseBadge(msg.phase);
+            break;
+
+          case 'invite_mode_changed':
+            updateInviteModeUI(msg.invite_mode);
             break;
 
           case 'participant_joined':

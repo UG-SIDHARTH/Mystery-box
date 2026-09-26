@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.models import InviteToken, Participant, Phase
+from app.models.models import InviteMode, InviteToken, Participant, Phase
 from app.services.event_service import (
     broadcast_stats,
     get_or_create_event,
@@ -78,10 +78,16 @@ async def join_event(
             }
 
     # Validate token
+    event = await get_or_create_event(db)
     result = await db.execute(select(InviteToken).where(InviteToken.token == token))
     invite = result.scalar_one_or_none()
-    if not invite or invite.used:
-        raise HTTPException(status_code=400, detail="Invalid or already used invite link.")
+    
+    if event.invite_mode == InviteMode.INVITE_ONLY:
+        if not invite or invite.used:
+            raise HTTPException(status_code=400, detail="Invalid or already used invite link.")
+    else:
+        if not invite:
+            raise HTTPException(status_code=400, detail="Invalid invite link.")
 
     # Get max display_number
     from sqlalchemy import func
@@ -99,9 +105,10 @@ async def join_event(
     db.add(participant)
     await db.flush()
 
-    # Mark token used
-    invite.used           = True
-    invite.participant_id = participant.id
+    if event.invite_mode == InviteMode.INVITE_ONLY:
+        invite.used           = True
+        invite.participant_id = participant.id
+
     await db.commit()
     await db.refresh(participant)
 
@@ -129,9 +136,9 @@ async def join_event(
     }, audience="host")
     await broadcast_stats(db)
 
-    # Rotate QR on host
-    base_url = str(request.base_url).rstrip("/")
-    await rotate_token(db, base_url)
+    if event.invite_mode == InviteMode.INVITE_ONLY:
+        base_url = str(request.base_url).rstrip("/")
+        await rotate_token(db, base_url)
 
     logger.info("Participant #%d joined", participant.display_number)
 

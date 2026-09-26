@@ -9,7 +9,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import Event, InviteToken, Participant, Phase, Upload, Vote
+from app.models.models import Event, InviteMode, InviteToken, Participant, Phase, Upload, Vote
 from app.services.qr_service import generate_token
 from app.services.ws_manager import manager
 
@@ -21,7 +21,7 @@ async def get_or_create_event(db: AsyncSession) -> Event:
     result = await db.execute(select(Event).limit(1))
     event = result.scalar_one_or_none()
     if event is None:
-        event = Event(phase=Phase.WAITING)
+        event = Event(phase=Phase.WAITING, invite_mode=InviteMode.OPEN)
         db.add(event)
         await db.commit()
         await db.refresh(event)
@@ -37,6 +37,15 @@ async def set_phase(db: AsyncSession, phase: Phase) -> Event:
     logger.info("Phase changed → %s", phase.value)
     return event
 
+
+async def set_invite_mode(db: AsyncSession, invite_mode: InviteMode) -> Event:
+    event = await get_or_create_event(db)
+    event.invite_mode = invite_mode
+    await db.commit()
+    await db.refresh(event)
+    await manager.emit("invite_mode_changed", {"invite_mode": invite_mode.value}, audience="host")
+    logger.info("Invite mode changed → %s", invite_mode.value)
+    return event
 
 
 async def get_or_create_active_token(db: AsyncSession) -> InviteToken:
@@ -96,12 +105,14 @@ async def get_stats(db: AsyncSession) -> dict[str, Any]:
 
     connected = sum(1 for p in participants if p.is_connected)
 
+    event = await get_or_create_event(db)
     return {
         "total_participants": total_participants,
         "total_uploads":      total_uploads,
         "remaining_uploads":  total_participants - total_uploads,
         "voting_complete":    voting_complete,
         "connected":          connected,
+        "invite_mode":        event.invite_mode.value,
     }
 
 

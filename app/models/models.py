@@ -18,11 +18,17 @@ class Phase(str, enum.Enum):
     RESULTS = "RESULTS"
 
 
+class InviteMode(str, enum.Enum):
+    INVITE_ONLY = "INVITE_ONLY"
+    OPEN = "OPEN"
+
+
 class Event(Base):
     __tablename__ = "events"
 
     id:         Mapped[int]      = mapped_column(Integer, primary_key=True, index=True)
     phase:      Mapped[Phase]    = mapped_column(Enum(Phase), default=Phase.WAITING, nullable=False)
+    invite_mode: Mapped[InviteMode] = mapped_column(Enum(InviteMode), default=InviteMode.OPEN, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

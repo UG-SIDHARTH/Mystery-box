@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.models import InviteToken, Participant, Phase, Upload, Vote
+from app.models.models import InviteToken, Participant, Phase, Vote, Upload, InviteMode
 from app.services.event_service import (
     broadcast_stats,
     get_leaderboard,
@@ -23,6 +23,7 @@ from app.services.event_service import (
     get_stats,
     rotate_token,
     set_phase,
+    set_invite_mode,
 )
 from app.services.image_service import UPLOADS_DIR
 from app.services.qr_service import make_qr_base64
@@ -112,6 +113,16 @@ async def change_phase(payload: PhasePayload, db: AsyncSession = Depends(get_db)
     event = await set_phase(db, payload.phase)
     await broadcast_stats(db)
     return {"phase": event.phase.value}
+
+
+class InviteModePayload(BaseModel):
+    invite_mode: InviteMode
+
+
+@router.post("/invite_mode")
+async def change_invite_mode(payload: InviteModePayload, db: AsyncSession = Depends(get_db)):
+    event = await set_invite_mode(db, payload.invite_mode)
+    return {"invite_mode": event.invite_mode.value}
 
 
 
