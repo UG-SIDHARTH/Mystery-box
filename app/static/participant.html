@@ -723,7 +723,8 @@
       const list = document.getElementById('results-list');
       list.innerHTML = '';
 
-      leaderboard.forEach((item, i) => {
+      const top3 = leaderboard.slice(0, 3);
+      top3.forEach((item, i) => {
         const medal = medals[item.rank - 1] || `#${item.rank}`;
         const stars = Array(5).fill(0).map((_, idx) =>
           idx < Math.round(item.avg_score)

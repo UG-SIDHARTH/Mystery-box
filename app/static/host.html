@@ -528,7 +528,8 @@
         '<i data-lucide="medal" class="w-8 h-8 inline text-orange-400"></i>'
       ];
 
-      list.innerHTML = leaderboard.map((item, i) => `
+      const top3 = leaderboard.slice(0, 3);
+      list.innerHTML = top3.map((item, i) => `
     <div class="flex items-center gap-4 px-5 py-4 hover:bg-white/5/30 transition animate-slide-up"
          style="animation-delay:${i * 60}ms">
       <span class="text-2xl w-10 text-center">${medals[item.rank - 1] || `#${item.rank}`}</span>
